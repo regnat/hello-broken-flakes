@@ -5,10 +5,9 @@
 
   outputs = { self, nixpkgs }: {
 
-    defaultPackage.x86_64-linux =
-      # Notice the reference to nixpkgs here.
-      with import nixpkgs { system = "x86_64-linux"; };
-      stdenv.mkDerivation {
+    packages.x86_64-linux =
+      with import nixpkgs { system = "x86_64-linux"; }; {
+      myhello = stdenv.mkDerivation {
         name = "hello";
         src = self;
         buildPhase = "gcc -o hello ./hello.c";
@@ -16,6 +15,14 @@
         outputHashMode = "recursive";
         outputHash = "sha256-T19Hhg7VPVIea8piV4S5g+Budc5sjSN1sy2weEnMXDY=";
       };
+
+      myhello-wrapped = runCommandNoCC "hello" {} ''
+        mkdir -p $out/bin
+        cp ${self.packages.x86_64-linux.myhello}/bin/hello $out/bin
+      '';
+    };
+
+    defaultPackage.x86_64-linux = self.packages.x86_64-linux.myhello-wrapped;
 
   };
 }
